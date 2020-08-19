@@ -8,9 +8,29 @@
 #define N 100
 
 
+typedef enum{c, d}COMMAND;
+
+struct commandsList {
+    int id;
+    COMMAND com;
+    char **document;
+    struct commandsList *prec;
+    struct commandsList *next;
+};
+
+typedef struct commandsList list;
+
+
 void changeText(int fromLine, int toLine, char **doc, char **text);
 void deleteText(int fromLine, int toLine, char **doc);
 void printText(int fromLine, int toLine, char **doc);
+
+
+void insertHead(list *node, char **doc, COMMAND c);
+void insertTail(list *node, char **doc, COMMAND c);
+void removeHead(list *node);
+void removeTail(list *node);
+
 
 int main() {
 
@@ -20,6 +40,11 @@ int main() {
     char *p;
     char *punt[3];
     //char *text;
+
+    list node;
+    node.id = 0;
+    node.prec = NULL;
+    node.next = NULL;
 
 
     char **document = malloc(N*sizeof(char*));
@@ -197,8 +222,54 @@ void printText(int fromLine, int toLine, char **doc) {
 
 
 
+void insertHead(list *node, char **doc, COMMAND c) {
 
+    list *n = malloc((sizeof(list)));
+    n->com = c;
+    for(int i = 0; doc[i] != NULL; i++) {
+        n->document[i] = malloc(strlen(doc[i])*sizeof(char));
+        strcpy(n->document[i], doc[i]);
+    }
+    n->prec = NULL;
+    n->next = node;
+    *node = *n;
 
+}
+
+void insertTail(list *node, char **doc, COMMAND c) {
+
+    if(node == NULL) {
+        insertHead(node, doc, c);
+    }
+    else {
+        insertTail(node->next, doc, c);
+    }
+
+}
+
+void removeHead(list *node) {
+
+    if(node != NULL) {
+        list *old = node;
+        *node = *(old->next);
+        free(old);
+    }
+
+}
+
+void removeTail(list *node) {
+
+    if(node != NULL) {
+        if(node->next == NULL) {
+            free(node);
+            node = NULL;
+        }
+        else {
+            removeTail(node->next);
+        }
+    }
+
+}
 
 
 
