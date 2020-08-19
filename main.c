@@ -8,6 +8,10 @@
 #define N 100
 
 
+void changeText(int fromLine, int toLine, char **doc, char **text);
+void deleteText(int fromLine, int toLine, char **doc);
+void printText(int fromLine, int toLine, char **doc);
+
 int main() {
 
     int i;
@@ -18,6 +22,8 @@ int main() {
     //char *text;
 
 
+    char **document = malloc(N*sizeof(char*));
+
 
     do {
 
@@ -25,7 +31,7 @@ int main() {
         char *result = fgets(comando, M, stdin);
         int firstLine, secondLine, line;
 
-        if(sscanf(comando, "%d,%d%c\n", &firstLine, &secondLine, &com) == 3) { //%*[^0123456789]%*c%*[^0123456789]%c\n"
+        if(sscanf(comando, "%d,%d%c\n", &firstLine, &secondLine, &com) == 3) {
 
 
             if(com == 'c') {
@@ -36,15 +42,17 @@ int main() {
                 char *text[grandezza];
 
 
-                for(int k = 0; k < grandezza - 1; k++) {
+                for(int k = 0; k < grandezza; k++) {
 
                     strcpy(comando, "");
-                    text[k] = malloc(sizeof(char[M]));
+                    text[k] = malloc(strlen(comando)*sizeof(char));
                     p = fgets(comando, M, stdin);
                     strcpy(text[k], comando);
                 }
-                text[grandezza - 1] = malloc(sizeof(char[M]));
-                strcpy(text[grandezza - 1], ".");
+                //text[grandezza - 1] = malloc(sizeof(char[M]));
+                //strcpy(text[grandezza - 1], ".");
+
+                //TODO: il punto va messo sempre con fgets?
 
                 /*printf("%d", firstLine);
                 printf("\n");
@@ -56,11 +64,26 @@ int main() {
                     printf("\n");
                 }*/
 
+                changeText(firstLine, secondLine, document, text);
+
+                /*for(int k = grandezza - 1; k >= 0; k--) {
+                    free(text[k]);
+                }*/
+
+                for(int k = 0; k < grandezza; k++) {
+                    free(text[k]);
+                }
+                //free(text);
+
             }
             else if(com == 'd') {
 
+                deleteText(firstLine, secondLine, document);
+
             }
             else if(com == 'p') {
+
+                printText(firstLine, secondLine, document);
 
             }
 
@@ -77,10 +100,109 @@ int main() {
         }
 
 
-    } while(strncmp(comando, "q", 1)!=0);
+    } while(strncmp(comando, "q", 1) != 0);
 
 
 
 
     return 0;
 }
+
+
+
+
+void changeText(int fromLine, int toLine, char **doc, char **text) {
+
+    for(int i = fromLine; i <= toLine; i++) {
+
+        if(doc[i-1] != NULL) {
+            free(doc[i-1]);
+            doc[i-1] = malloc(strlen(text[i-1])*sizeof(char));
+            strcpy(doc[i-1], text[i-fromLine]);
+        }
+        else {
+
+            if(i - 1 == N + 1) {
+                doc = realloc(doc, 2*N*sizeof(char*));
+            }
+
+            doc[i-1] = malloc(strlen(text[i-1])*sizeof(char));
+            strcpy(doc[i-1], text[i-fromLine]);
+        }
+
+    }
+
+}
+
+
+void deleteText(int fromLine, int toLine, char **doc) {
+
+    int deletedLines = 0;
+    //size_t sizeBefore = sizeof(doc)/sizeof(doc[0]);
+
+    if(doc[toLine + 1] == NULL) {
+        for(int i = fromLine; i <= toLine; i++) {
+
+            if(doc[i-1] == NULL) {
+                continue;
+            }
+            else {
+                deletedLines++;
+                free(doc[i-1]);
+                doc[i-1] = NULL;
+            }
+
+        }
+    }
+    else{
+        for(int i = fromLine; i <= toLine; i++) {
+            deletedLines++;
+            free(doc[i-1]);
+            doc[i-1] = NULL;
+        }
+
+        for(int i = toLine; doc[i] != NULL; i++) {
+
+            if(doc[i - deletedLines] == NULL) {
+                doc[i - deletedLines] = malloc(strlen(doc[i])*sizeof(char));
+                strcpy(doc[i - deletedLines], doc[i]);
+                free(doc[i]);
+                doc[i] = NULL;
+            }
+            else {
+                free(doc[i - 1 - deletedLines]);
+                doc[i - 1 - deletedLines] = malloc(strlen(doc[i - 1])*sizeof(char));
+                strcpy(doc[i - 1 - deletedLines], doc[i - 1]);
+                free(doc[i - 1]);
+                doc[i - 1] = NULL;
+            }
+
+        }
+    }
+
+}
+
+void printText(int fromLine, int toLine, char **doc) {
+
+    for (int i = fromLine; i <= toLine; i++) {
+        if(doc[i - 1] == NULL) {
+            fputs(".\n", stdout);
+        }
+        else {
+            fputs(doc[i - 1], stdout);
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
