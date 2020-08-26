@@ -24,19 +24,22 @@ list NIL;
 list* T_NIL = &NIL;
 
 
-void changeText(int fromLine, int toLine, char **doc, char **text, list **head, int ind, int *s);
-void deleteText(int fromLine, int toLine, char **doc, list **head, int ind, int *s);
+void changeText(int fromLine, int toLine, char **doc, char **text, list **head, list **h, int ind, int *s);
+void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int ind, int *s);
+void undo(int numCommands, char **doc, list **head, int ind);
+void redo(int numCommands, char **doc, list **head, int ind);
 void printText(int fromLine, int toLine, char **doc);
 
 
-void insertHead(list **head, char **doc, COMMAND c, int ind, int *s);
-void insertTail(list **head, char **doc, COMMAND c, int ind, int *s);
+void insertHead(list **head, list **h, list *n, int ind);
+void insertTail(list **head, list **h, list *n, int ind);
 //void removeHead(list **head, list *node);
 //void removeTail(list **head, list *node);
 void removeHead(list **head);
 void removeTail(list **head);
+void removeElement(list **head, list *node);
 
-list* findNodeById(list **head, int id);
+list* findNodeById(list *node, int id);
 
 
 int main() {
@@ -58,7 +61,11 @@ int main() {
     list *head;
     head = T_NIL;
 
+    list *h;
+    h = T_NIL;
+
     int index = 0;
+    int possibleRedoLines = 0;
 
 
     char **document = malloc((*s)*sizeof(char*));
@@ -104,7 +111,7 @@ int main() {
                     printf("\n");
                 }*/
 
-                changeText(firstLine, secondLine, document, text, &head, index, s);
+                changeText(firstLine, secondLine, document, text, &head, &h, index, s);
 
                 /*for(int k = grandezza - 1; k >= 0; k--) {
                     free(text[k]);
@@ -120,7 +127,7 @@ int main() {
 
                 index++;
 
-                deleteText(firstLine, secondLine, document, &head, index, s);
+                deleteText(firstLine, secondLine, document, &head, &h, index, s);
 
             }
             else if(com == 'p') {
@@ -134,8 +141,31 @@ int main() {
 
             if(com == 'u') {
 
+                int indTemp = index;
+
+                for(int i = 0; i < line; i++) {
+                    if(i < indTemp) {
+                        index--;
+                        possibleRedoLines++;
+                    }
+                }
+
+                undo(possibleRedoLines, document, &head, indTemp);
+
             }
             else if(com == 'r') {
+
+                int indTemp = index;
+
+                for(int i = 0; i < line; i++) {
+                    if(possibleRedoLines > 0) {
+                        index++;
+                        possibleRedoLines--;
+                    }
+
+                }
+
+                redo(possibleRedoLines, document, &head, indTemp);
 
             }
 
@@ -153,7 +183,25 @@ int main() {
 
 
 
-void changeText(int fromLine, int toLine, char **doc, char **text, list **head, int ind, int *s) {
+void changeText(int fromLine, int toLine, char **doc, char **text, list **head, list **h, int ind, int *s) {
+
+    list *indexNode = findNodeById(*h, ind);
+
+    /*while(indexNode->next != T_NIL) {
+        removeHead(&(indexNode->next));
+        //indexNode = indexNode->next;
+    }*/
+
+    if(indexNode->next != T_NIL) {
+
+        while(indexNode->next != T_NIL) {
+            removeHead(&(indexNode->next));
+            //indexNode = indexNode->next;
+        }
+
+        indexNode->next = T_NIL;
+
+    }
 
     for(int i = fromLine; i <= toLine; i++) {
 
@@ -175,12 +223,35 @@ void changeText(int fromLine, int toLine, char **doc, char **text, list **head, 
 
     }
 
-    insertTail(head, doc, c, ind, s);
+    list *n = malloc((sizeof(list)));
+    n->id = ind;
+    n->com = c;
+    n->document = malloc((*s)*sizeof(char*));
+    for(int i = 0; doc[i] != NULL; i++) {
+        n->document[i] = malloc(strlen(doc[i])*sizeof(char));
+        strcpy(n->document[i], doc[i]);
+    }
+
+    insertTail(head, h, n, ind);
 
 }
 
 
-void deleteText(int fromLine, int toLine, char **doc, list **head, int ind, int *s) {
+void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int ind, int *s) {
+
+    list *indexNode = findNodeById(*h, ind);
+
+    if(indexNode->next != T_NIL) {
+
+        while(indexNode->next != T_NIL) {
+            removeHead(&(indexNode->next));
+            //indexNode = indexNode->next;
+        }
+
+        indexNode->next = T_NIL;
+
+    }
+
 
     int deletedLines = 0;
     //size_t sizeBefore = sizeof(doc)/sizeof(doc[0]);
@@ -225,9 +296,16 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, int ind, int 
         }
     }
 
+    list *n = malloc((sizeof(list)));
+    n->id = ind;
+    n->com = c;
+    n->document = malloc((*s)*sizeof(char*));
+    for(int i = 0; doc[i] != NULL; i++) {
+        n->document[i] = malloc(strlen(doc[i])*sizeof(char));
+        strcpy(n->document[i], doc[i]);
+    }
 
-
-    insertTail(head, doc, c, ind, s);
+    insertTail(head, h, n, ind);
 
 }
 
@@ -244,39 +322,83 @@ void printText(int fromLine, int toLine, char **doc) {
 
 }
 
+void undo(int numCommands, char **doc, list **head, int ind) {
+
+    list *backToNode = findNodeById(*head, ind-numCommands);
+
+    for(int i = 0; doc[i] != NULL; i++) {
+        free(doc[i]);
+        doc[i] = NULL;
+    }
+    for(int i = 0; backToNode->document[i] != NULL; i++) {
+        doc[i] = malloc(strlen(backToNode->document[i])*sizeof(char));
+        strcpy(doc[i], backToNode->document[i]);
+    }
+}
+
+void redo(int numCommands, char **doc, list **head, int ind) {
+
+    list *restoreToNode = findNodeById(*head, ind+numCommands);
+
+    for(int i = 0; doc[i] != NULL; i++) {
+        free(doc[i]);
+        doc[i] = NULL;
+    }
+    for(int i = 0; restoreToNode->document[i] != NULL; i++) {
+        doc[i] = malloc(strlen(restoreToNode->document[i])* sizeof(char));
+        strcpy(doc[i], restoreToNode->document[i]);
+    }
+
+}
 
 
-void insertHead(list **head, char **doc, COMMAND c, int ind, int *s) {
 
-    list *n = malloc((sizeof(list)));
+void insertHead(list **head, list **h, list *n, int ind) {
+
+    /*list *n = malloc((sizeof(list)));
     n->id = ind;
     n->com = c;
     n->document = malloc((*s)*sizeof(char*));
     for(int i = 0; doc[i] != NULL; i++) {
         n->document[i] = malloc(strlen(doc[i])*sizeof(char));
         strcpy(n->document[i], doc[i]);
-    }
+    }*/
 
     if(ind == 1) {
         n->prec = T_NIL;
+
+        n->next = *head;
+        *head = n;
+        n->next->prec = n;
+        *h = n;
     }
     else {
-        n->prec = findNodeById(head, ind-1);
+        n->prec = findNodeById(*h, ind-1);
+        n->next = *head;
+        *head = n;
+        n->next->prec = n;
         n->prec->next = n;
+
+
+
+
     }
-    n->next = *head;
+    /*n->next = *head;
     *head = n;
-    n->next->prec = n;
+    n->next->prec = n;*/
 
 }
 
-void insertTail(list **head, char **doc, COMMAND c, int ind, int *s) {
+//provare a dare due parametri uguali che indicano la testa **head.
+//uno lo tengo fisso, così da riuscire ad utilizzarlo (dereferenziato) come parametro per la findNodeById
+
+void insertTail(list **head, list **h, list *n, int ind) {
 
     if(*head == T_NIL) {
-        insertHead(head, doc, c, ind, s);
+        insertHead(head, h, n, ind);
     }
     else {
-        insertTail(&(*head)->next, doc, c, ind, s);
+        insertTail(&(*head)->next, h, n, ind);
     }
 
 }
@@ -286,6 +408,7 @@ void removeHead(list **head) {
     if(*head != T_NIL) {
         list *old = *head;
         *head = old->next;
+        old->next->prec = *head;
         free(old);
     }
 
@@ -305,12 +428,19 @@ void removeTail(list **head) {
 
 }
 
-list* findNodeById(list **head, int id) {
-    if(*head == T_NIL || (*head)->id == id) {
-        return *head;
+void removeElement(list **head, list *node) {
+    if(*head != T_NIL) {
+
+    }
+}
+
+
+list* findNodeById(list *node, int id) {
+    if(node == T_NIL || node->id == id) {
+        return node;
     }
     else {
-        return findNodeById(&(*head)->next, id);
+        return findNodeById(node->next, id);
     }
 }
 
