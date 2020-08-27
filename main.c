@@ -37,7 +37,7 @@ void insertTail(list **head, list **h, list *n, int ind);
 //void removeTail(list **head, list *node);
 void removeHead(list **head);
 void removeTail(list **head);
-void removeElement(list **head, list *node);
+//void removeElement(list **head, list *node);
 
 list* findNodeById(list *node, int id);
 
@@ -50,7 +50,7 @@ int main() {
     char comando[M];
     char com;
     char *p;
-    char *punt[3];
+    //char *punt[3];
     //char *text;
 
 
@@ -82,10 +82,10 @@ int main() {
 
             if(com == 'c') {
 
+                possibleRedoLines = 0;
                 index++;
 
                 int grandezza = (secondLine - firstLine) + 2;
-                //char text[grandezza][M];
                 char *text[grandezza];
 
 
@@ -96,35 +96,21 @@ int main() {
                     p = fgets(comando, M, stdin);
                     strcpy(text[k], comando);
                 }
-                //text[grandezza - 1] = malloc(sizeof(char[M]));
-                //strcpy(text[grandezza - 1], ".");
+
 
                 //TODO: il punto va messo sempre con fgets?
 
-                /*printf("%d", firstLine);
-                printf("\n");
-                printf("%d", secondLine);
-                printf("\n");
-
-                for(int l = 0; l < (secondLine - firstLine) + 2; l++) {
-                    printf(textSupport[l]);
-                    printf("\n");
-                }*/
-
                 changeText(firstLine, secondLine, document, text, &head, &h, index, s);
 
-                /*for(int k = grandezza - 1; k >= 0; k--) {
-                    free(text[k]);
-                }*/
 
                 for(int k = 0; k < grandezza; k++) {
                     free(text[k]);
                 }
-                //free(text);
 
             }
             else if(com == 'd') {
 
+                possibleRedoLines = 0;
                 index++;
 
                 deleteText(firstLine, secondLine, document, &head, &h, index, s);
@@ -156,6 +142,7 @@ int main() {
             else if(com == 'r') {
 
                 int indTemp = index;
+                int redoLineTemp = possibleRedoLines;
 
                 for(int i = 0; i < line; i++) {
                     if(possibleRedoLines > 0) {
@@ -165,7 +152,7 @@ int main() {
 
                 }
 
-                redo(possibleRedoLines, document, &head, indTemp);
+                redo((redoLineTemp-possibleRedoLines), document, &head, indTemp);
 
             }
 
@@ -174,7 +161,10 @@ int main() {
 
     } while(strncmp(comando, "q", 1) != 0);
 
-
+    for(int i = 0; document[i] != NULL; i++) {
+        free(document[i]);
+    }
+    free(document);
 
 
     return 0;
@@ -186,11 +176,6 @@ int main() {
 void changeText(int fromLine, int toLine, char **doc, char **text, list **head, list **h, int ind, int *s) {
 
     list *indexNode = findNodeById(*h, ind);
-
-    /*while(indexNode->next != T_NIL) {
-        removeHead(&(indexNode->next));
-        //indexNode = indexNode->next;
-    }*/
 
     if(indexNode->next != T_NIL) {
 
@@ -254,7 +239,6 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
 
 
     int deletedLines = 0;
-    //size_t sizeBefore = sizeof(doc)/sizeof(doc[0]);
 
     if(doc[toLine + 1] == NULL) {
         for(int i = fromLine; i <= toLine; i++) {
@@ -345,7 +329,7 @@ void redo(int numCommands, char **doc, list **head, int ind) {
         doc[i] = NULL;
     }
     for(int i = 0; restoreToNode->document[i] != NULL; i++) {
-        doc[i] = malloc(strlen(restoreToNode->document[i])* sizeof(char));
+        doc[i] = malloc(strlen(restoreToNode->document[i])*sizeof(char));
         strcpy(doc[i], restoreToNode->document[i]);
     }
 
@@ -379,13 +363,7 @@ void insertHead(list **head, list **h, list *n, int ind) {
         n->next->prec = n;
         n->prec->next = n;
 
-
-
-
     }
-    /*n->next = *head;
-    *head = n;
-    n->next->prec = n;*/
 
 }
 
@@ -428,11 +406,11 @@ void removeTail(list **head) {
 
 }
 
-void removeElement(list **head, list *node) {
+/*void removeElement(list **head, list *node) {
     if(*head != T_NIL) {
 
     }
-}
+}*/
 
 
 list* findNodeById(list *node, int id) {
