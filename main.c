@@ -82,6 +82,10 @@ int main() {
 
             if(com == 'c') {
 
+                if(firstLine == 0 || secondLine == 0) {
+                    continue;
+                }
+
                 possibleRedoLines = 0;
                 index++;
 
@@ -92,7 +96,7 @@ int main() {
                 for(int k = 0; k < grandezza; k++) {
 
                     strcpy(comando, "");
-                    text[k] = malloc(strlen(comando)*sizeof(char));
+                    text[k] = malloc(M*sizeof(char));
                     p = fgets(comando, M, stdin);
                     strcpy(text[k], comando);
                 }
@@ -110,6 +114,10 @@ int main() {
             }
             else if(com == 'd') {
 
+                if(firstLine == 0 || secondLine == 0) {
+                    continue;
+                }
+
                 possibleRedoLines = 0;
                 index++;
 
@@ -117,6 +125,11 @@ int main() {
 
             }
             else if(com == 'p') {
+
+                if(firstLine == 0 || secondLine == 0) {
+                    fputs(".\n", stdout);
+                    continue;
+                }
 
                 printText(firstLine, secondLine, document);
 
@@ -127,12 +140,21 @@ int main() {
 
             if(com == 'u') {
 
+                if(line == 0) {
+                    continue;
+                }
+
                 int indTemp = index;
 
                 for(int i = 0; i < line; i++) {
                     if(i < indTemp) {
-                        index--;
-                        possibleRedoLines++;
+                        if(index >= 0) {
+                            index--;
+                            possibleRedoLines++;
+                        }
+                        else {
+                            continue;
+                        }
                     }
                 }
 
@@ -140,6 +162,10 @@ int main() {
 
             }
             else if(com == 'r') {
+
+                if(line == 0) {
+                    continue;
+                }
 
                 int indTemp = index;
                 int redoLineTemp = possibleRedoLines;
@@ -197,7 +223,7 @@ void changeText(int fromLine, int toLine, char **doc, char **text, list **head, 
         }
         else {
 
-            if(i - 1 == *s + 1) {
+            if(i - 1 == *s) {
                 doc = realloc(doc, 2*(*s)*sizeof(char*));
                 *s = (*s)*2;
             }
@@ -240,7 +266,7 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
 
     int deletedLines = 0;
 
-    if(doc[toLine + 1] == NULL) {
+    if(doc[toLine] == NULL) {
         for(int i = fromLine; i <= toLine; i++) {
 
             if(doc[i-1] == NULL) {
@@ -314,10 +340,13 @@ void undo(int numCommands, char **doc, list **head, int ind) {
         free(doc[i]);
         doc[i] = NULL;
     }
-    for(int i = 0; backToNode->document[i] != NULL; i++) {
-        doc[i] = malloc(strlen(backToNode->document[i])*sizeof(char));
-        strcpy(doc[i], backToNode->document[i]);
+    if(backToNode != T_NIL) {
+        for(int i = 0; backToNode->document[i] != NULL; i++) {
+            doc[i] = malloc(strlen(backToNode->document[i])*sizeof(char));
+            strcpy(doc[i], backToNode->document[i]);
+        }
     }
+
 }
 
 void redo(int numCommands, char **doc, list **head, int ind) {
