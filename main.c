@@ -24,7 +24,7 @@ list NIL;
 list* T_NIL = &NIL;
 
 
-void changeText(int fromLine, int toLine, char **doc, char **text, list **head, list **h, int ind, int *s);
+void changeText(int fromLine, int toLine, char **doc, char *text, list **head, list **h, int ind, int *s);
 void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int ind, int *s);
 void undo(int numCommands, char **doc, list **head, int ind);
 void redo(int numCommands, char **doc, list **head, int ind);
@@ -90,26 +90,26 @@ int main() {
                 index++;
 
                 int grandezza = (secondLine - firstLine) + 2;
-                char *text[grandezza];
+                //char *text[grandezza];
+
+                char text[M];
 
 
-                for(int k = 0; k < grandezza; k++) {
+                /*for(int k = 0; k < grandezza; k++) {
 
                     strcpy(comando, "");
                     text[k] = malloc(M*sizeof(char));
                     p = fgets(comando, M, stdin);
                     strcpy(text[k], comando);
-                }
-
-
-                //TODO: il punto va messo sempre con fgets?
+                }*/
 
                 changeText(firstLine, secondLine, document, text, &head, &h, index, s);
 
 
-                for(int k = 0; k < grandezza; k++) {
+                /*for(int k = 0; k < grandezza; k++) {
                     free(text[k]);
-                }
+                    //text[k] = NULL;
+                }*/
 
             }
             else if(com == 'd') {
@@ -125,11 +125,6 @@ int main() {
 
             }
             else if(com == 'p') {
-
-                if(firstLine == 0 || secondLine == 0) {
-                    fputs(".\n", stdout);
-                    continue;
-                }
 
                 printText(firstLine, secondLine, document);
 
@@ -199,7 +194,7 @@ int main() {
 
 
 
-void changeText(int fromLine, int toLine, char **doc, char **text, list **head, list **h, int ind, int *s) {
+void changeText(int fromLine, int toLine, char **doc, char *text, list **head, list **h, int ind, int *s) {
 
     list *indexNode = findNodeById(*h, ind);
 
@@ -214,11 +209,41 @@ void changeText(int fromLine, int toLine, char **doc, char **text, list **head, 
 
     }
 
-    for(int i = fromLine; i <= toLine; i++) {
+    //int grandezza = (toLine - fromLine) + 2;
+
+    for(int i = fromLine; i <= toLine + 1; i++) {
+
+        strcpy(text, "");
+        fgets(text, M, stdin);
+        char *string = malloc((strlen(text)+1)*sizeof(char));
+        strcpy(string, text);
+
+        if(i != toLine + 1) {
+            if(doc[i-1] != NULL) {
+                doc[i-1] = string;
+            }
+            else {
+
+                if(i - 1 == *s) {
+                    doc = realloc(doc, 2*(*s)*sizeof(char*));
+                    *s = (*s)*2;
+                }
+
+                doc[i-1] = string;
+            }
+        }
+        else {
+            continue;
+        }
+
+    }
+
+
+    /*for(int i = fromLine; i <= toLine; i++) {
 
         if(doc[i-1] != NULL) {
-            free(doc[i-1]);
-            doc[i-1] = malloc(strlen(text[i-fromLine])*sizeof(char));
+            //free(doc[i-1]);
+            doc[i-1] = malloc((strlen(text[i-fromLine])+1)*sizeof(char));
             strcpy(doc[i-1], text[i-fromLine]);
         }
         else {
@@ -228,19 +253,19 @@ void changeText(int fromLine, int toLine, char **doc, char **text, list **head, 
                 *s = (*s)*2;
             }
 
-            doc[i-1] = malloc(strlen(text[i-fromLine])*sizeof(char));
+            doc[i-1] = malloc((strlen(text[i-fromLine])+1)*sizeof(char));
+            //strcpy(doc[i-1], "");
             strcpy(doc[i-1], text[i-fromLine]);
         }
 
-    }
+    }*/
 
     list *n = malloc((sizeof(list)));
     n->id = ind;
     n->com = c;
     n->document = malloc((*s)*sizeof(char*));
     for(int i = 0; doc[i] != NULL; i++) {
-        n->document[i] = malloc(strlen(doc[i])*sizeof(char));
-        strcpy(n->document[i], doc[i]);
+        n->document[i] = doc[i];
     }
 
     insertTail(head, h, n, ind);
@@ -274,7 +299,7 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
             }
             else {
                 deletedLines++;
-                free(doc[i-1]);
+                //free(doc[i-1]);
                 doc[i-1] = NULL;
             }
 
@@ -283,23 +308,28 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
     else{
         for(int i = fromLine; i <= toLine; i++) {
             deletedLines++;
-            free(doc[i-1]);
+            //free(doc[i-1]);
             doc[i-1] = NULL;
         }
 
         for(int i = toLine; doc[i] != NULL; i++) {
 
+            //doc[i - deletedLines] = doc[i];
+            //doc[i] = NULL;
+
             if(doc[i - deletedLines] == NULL) {
-                doc[i - deletedLines] = malloc(strlen(doc[i])*sizeof(char));
-                strcpy(doc[i - deletedLines], doc[i]);
-                free(doc[i]);
+                //doc[i - deletedLines] = malloc((strlen(doc[i])+1)*sizeof(char));
+                doc[i - deletedLines] = doc[i];
+                //strcpy(doc[i - deletedLines], doc[i]);
+                //free(doc[i]);
                 doc[i] = NULL;
             }
             else {
-                free(doc[i - 1 - deletedLines]);
-                doc[i - 1 - deletedLines] = malloc(strlen(doc[i - 1])*sizeof(char));
-                strcpy(doc[i - 1 - deletedLines], doc[i - 1]);
-                free(doc[i - 1]);
+                //free(doc[i - 1 - deletedLines]);
+                //doc[i - 1 - deletedLines] = malloc((strlen(doc[i - 1])+1)*sizeof(char));
+                doc[i - 1 - deletedLines] = doc[i-1];
+                //strcpy(doc[i - 1 - deletedLines], doc[i - 1]);
+                //free(doc[i - 1]);
                 doc[i - 1] = NULL;
             }
 
@@ -308,11 +338,11 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
 
     list *n = malloc((sizeof(list)));
     n->id = ind;
-    n->com = c;
+    n->com = d;
     n->document = malloc((*s)*sizeof(char*));
     for(int i = 0; doc[i] != NULL; i++) {
-        n->document[i] = malloc(strlen(doc[i])*sizeof(char));
-        strcpy(n->document[i], doc[i]);
+        n->document[i] = doc[i];
+        //strcpy(n->document[i], doc[i]);
     }
 
     insertTail(head, h, n, ind);
@@ -321,12 +351,25 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
 
 void printText(int fromLine, int toLine, char **doc) {
 
-    for (int i = fromLine; i <= toLine; i++) {
-        if(doc[i - 1] == NULL) {
+    if(fromLine == 0) {
+        if(toLine == 0) {
             fputs(".\n", stdout);
         }
         else {
-            fputs(doc[i - 1], stdout);
+            fputs(".\n", stdout);
+            fromLine++;
+
+        }
+    }
+
+    if(fromLine != 0) {
+        for (int i = fromLine; i <= toLine; i++) {
+            if(doc[i - 1] == NULL) {
+                fputs(".\n", stdout);
+            }
+            else {
+                fputs(doc[i - 1], stdout);
+            }
         }
     }
 
@@ -337,13 +380,14 @@ void undo(int numCommands, char **doc, list **head, int ind) {
     list *backToNode = findNodeById(*head, ind-numCommands);
 
     for(int i = 0; doc[i] != NULL; i++) {
-        free(doc[i]);
+        //free(doc[i]);
         doc[i] = NULL;
     }
     if(backToNode != T_NIL) {
         for(int i = 0; backToNode->document[i] != NULL; i++) {
-            doc[i] = malloc(strlen(backToNode->document[i])*sizeof(char));
-            strcpy(doc[i], backToNode->document[i]);
+            //doc[i] = malloc((strlen(backToNode->document[i])+1)*sizeof(char));
+            doc[i] = backToNode->document[i];
+            //strcpy(doc[i], backToNode->document[i]);
         }
     }
 
@@ -354,12 +398,13 @@ void redo(int numCommands, char **doc, list **head, int ind) {
     list *restoreToNode = findNodeById(*head, ind+numCommands);
 
     for(int i = 0; doc[i] != NULL; i++) {
-        free(doc[i]);
+        //free(doc[i]);
         doc[i] = NULL;
     }
     for(int i = 0; restoreToNode->document[i] != NULL; i++) {
-        doc[i] = malloc(strlen(restoreToNode->document[i])*sizeof(char));
-        strcpy(doc[i], restoreToNode->document[i]);
+        //doc[i] = malloc((strlen(restoreToNode->document[i])+1)*sizeof(char));
+        doc[i] = restoreToNode->document[i];
+        //strcpy(doc[i], restoreToNode->document[i]);
     }
 
 }
