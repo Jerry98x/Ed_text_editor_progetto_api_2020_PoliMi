@@ -89,6 +89,11 @@ int main() {
                 possibleRedoLines = 0;
                 index++;
 
+                while(secondLine > *s) {
+                    document = realloc(document, 2*(*s)*sizeof(char*));
+                    *s = (*s)*2;
+                }
+
                 int grandezza = (secondLine - firstLine) + 2;
                 //char *text[grandezza];
 
@@ -209,6 +214,17 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, l
 
     }
 
+
+    /*if(fromLine == 0) {
+        if(toLine == 0) {
+            return;
+        }
+        else {
+            fromLine++;
+        }
+    }*/
+
+
     //int grandezza = (toLine - fromLine) + 2;
 
     for(int i = fromLine; i <= toLine + 1; i++) {
@@ -219,18 +235,21 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, l
         strcpy(string, text);
 
         if(i != toLine + 1) {
-            if(doc[i-1] != NULL) {
+            /*if(doc[i-1] != NULL) {
                 doc[i-1] = string;
             }
             else {
 
                 if(i - 1 == *s) {
-                    doc = realloc(doc, 2*(*s)*sizeof(char*));
+                    //doc = realloc(doc, 2*(*s)*sizeof(char*));
+                    char **newDoc = realloc(doc, 2*(*s)*sizeof(char*));
+                    *doc = *newDoc;
                     *s = (*s)*2;
                 }
 
                 doc[i-1] = string;
-            }
+            }*/
+            doc[i-1] = string;
         }
         else {
             continue;
@@ -286,6 +305,16 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
 
         indexNode->next = T_NIL;
 
+    }
+
+
+    if(fromLine == 0) {
+        if(toLine == 0) {
+            return;
+        }
+        else {
+            fromLine++;
+        }
     }
 
 
