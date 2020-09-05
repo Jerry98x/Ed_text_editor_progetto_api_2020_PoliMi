@@ -69,7 +69,6 @@ int main() {
     int index = 0;
     int possibleRedoLines = 0;
 
-
     char **document = malloc((*s)*sizeof(char*));
 
 
@@ -147,12 +146,14 @@ int main() {
                 }
 
                 int indTemp = index;
+                int thisUndo = 0;
 
                 for(int i = 0; i < line; i++) {
                     if(i < indTemp) {
                         if(index >= 0) {
                             index--;
                             possibleRedoLines++;
+                            thisUndo++;
                         }
                         else {
                             continue;
@@ -160,7 +161,7 @@ int main() {
                     }
                 }
 
-                undo(possibleRedoLines, document, &head, indTemp);
+                undo(thisUndo, document, &head, indTemp);
 
             }
             else if(com == 'r') {
@@ -396,7 +397,8 @@ void printText(int fromLine, int toLine, char **doc) {
 
 void undo(int numCommands, char **doc, list **head, int ind) {
 
-    list *actualNode = *head;
+    list *actualNode = findNodeById(*head, ind);
+    //list *actualNode = *head;
 
     while((actualNode != T_NIL) && (actualNode->id != ind - numCommands)) {
 
@@ -417,13 +419,13 @@ void undo(int numCommands, char **doc, list **head, int ind) {
             }
         }
         else if(actualNode->com == d) {
-            if(actualNode->document[0] != NULL) {
-                int dLines = actualNode->sLine - actualNode->fLine + 1;
-                for(int i = actualNode->sLine; actualNode->document[i-(actualNode->sLine)] != NULL; i++) {
-                    doc[i-1+dLines] = doc[i-1];
-                    doc[i-1] = actualNode->document[i];
-                }
+            //if(actualNode->document[0] != NULL) {
+            int dLines = actualNode->sLine - actualNode->fLine + 1;
+            for(int i = actualNode->sLine; actualNode->document[i-(actualNode->sLine)] != NULL; i++) {
+                doc[i-1+dLines] = doc[i-1];
+                doc[i-1] = actualNode->document[i];
             }
+            //}
         }
 
         actualNode = actualNode->next;
