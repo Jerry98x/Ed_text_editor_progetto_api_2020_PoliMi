@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 
 
 #define M 1024
-#define N 100
+#define N 1000
 
 
 typedef enum{c, d}COMMAND;
@@ -13,6 +12,8 @@ typedef enum{c, d}COMMAND;
 struct commandsList {
     int id;
     COMMAND com;
+    int fLine;
+    int sLine;
     char **document;
     struct commandsList *prec;
     struct commandsList *next;
@@ -32,6 +33,7 @@ void printText(int fromLine, int toLine, char **doc);
 
 
 void insertHead(list **head, list **h, list *n, int ind);
+void insHead(list **head, list *n);
 void insertTail(list **head, list **h, list *n, int ind);
 //void removeHead(list **head, list *node);
 //void removeTail(list **head, list *node);
@@ -187,11 +189,6 @@ int main() {
 
     } while(strncmp(comando, "q", 1) != 0);
 
-    for(int i = 0; document[i] != NULL; i++) {
-        free(document[i]);
-    }
-    free(document);
-
 
     return 0;
 }
@@ -201,17 +198,24 @@ int main() {
 
 void changeText(int fromLine, int toLine, char **doc, char *text, list **head, list **h, int ind, int *s) {
 
-    list *indexNode = findNodeById(*h, ind);
+    /*list *indexNode = findNodeById(*head, ind-1);
 
-    if(indexNode->next != T_NIL) {
+    if(indexNode->prec != T_NIL) {
 
-        while(indexNode->next != T_NIL) {
-            removeHead(&(indexNode->next));
-            //indexNode = indexNode->next;
+        for(int i = (*head)->id; i > ind; i--) {
+            removeHead(head);
         }
 
-        indexNode->next = T_NIL;
+        while(indexNode->prec != T_NIL) {
+            removeHead(&(indexNode->prec));
+        }
 
+        indexNode->prec = T_NIL;
+
+    }*/
+
+    for(int i = (*head)->id; i > ind-1; i--) {
+        removeHead(head);
     }
 
 
@@ -225,30 +229,33 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, l
     }*/
 
 
-    //int grandezza = (toLine - fromLine) + 2;
 
-    for(int i = fromLine; i <= toLine + 1; i++) {
+    list *n = malloc((sizeof(list)));
+    n->id = ind;
+    n->com = c;
+    n->fLine = fromLine;
+    n->sLine = toLine;
+    n->document = malloc((toLine-fromLine+1)*sizeof(char*));
+    /*for(int i = fromLine; i <= toLine; i++) {
+        if(doc[i-1] != NULL) {
+            n->document[i-fromLine] = doc[i-1];
+        }
+
+    }*/
+
+    for(int i = fromLine; i <= toLine; i++) {
+        if(doc[i-1] != NULL) {
+            n->document[i-fromLine] = doc[i-1];
+        }
 
         strcpy(text, "");
-        fgets(text, M, stdin);
+        if(fgets(text, M, stdin) == NULL) {
+          return;
+        }
         char *string = malloc((strlen(text)+1)*sizeof(char));
         strcpy(string, text);
 
         if(i != toLine + 1) {
-            /*if(doc[i-1] != NULL) {
-                doc[i-1] = string;
-            }
-            else {
-
-                if(i - 1 == *s) {
-                    //doc = realloc(doc, 2*(*s)*sizeof(char*));
-                    char **newDoc = realloc(doc, 2*(*s)*sizeof(char*));
-                    *doc = *newDoc;
-                    *s = (*s)*2;
-                }
-
-                doc[i-1] = string;
-            }*/
             doc[i-1] = string;
         }
         else {
@@ -256,55 +263,44 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, l
         }
 
     }
-
-
-    /*for(int i = fromLine; i <= toLine; i++) {
-
-        if(doc[i-1] != NULL) {
-            //free(doc[i-1]);
-            doc[i-1] = malloc((strlen(text[i-fromLine])+1)*sizeof(char));
-            strcpy(doc[i-1], text[i-fromLine]);
-        }
-        else {
-
-            if(i - 1 == *s) {
-                doc = realloc(doc, 2*(*s)*sizeof(char*));
-                *s = (*s)*2;
-            }
-
-            doc[i-1] = malloc((strlen(text[i-fromLine])+1)*sizeof(char));
-            //strcpy(doc[i-1], "");
-            strcpy(doc[i-1], text[i-fromLine]);
-        }
-
-    }*/
-
-    list *n = malloc((sizeof(list)));
-    n->id = ind;
-    n->com = c;
-    n->document = malloc((*s)*sizeof(char*));
-    for(int i = 0; doc[i] != NULL; i++) {
-        n->document[i] = doc[i];
+    if(fgets(text, M, stdin) == NULL) {
+        return;
     }
 
-    insertTail(head, h, n, ind);
+
+    /*list *n = malloc((sizeof(list)));
+    n->id = ind;
+    n->com = c;
+    n->fLine = fromLine;
+    n->sLine = toLine;
+    n->document = malloc((toLine-fromLine+1)*sizeof(char*));
+    for(int i = fromLine; i <= toLine; i++) {
+        n->document[i-fromLine] = doc[i-1];
+    }*/
+
+    //insertTail(head, h, n, ind);
+    insHead(head,n);
+
 
 }
 
 
 void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int ind, int *s) {
 
-    list *indexNode = findNodeById(*h, ind);
+    /*list *indexNode = findNodeById(*h, ind);
 
     if(indexNode->next != T_NIL) {
 
         while(indexNode->next != T_NIL) {
             removeHead(&(indexNode->next));
-            //indexNode = indexNode->next;
         }
 
         indexNode->next = T_NIL;
 
+    }*/
+
+    for(int i = (*head)->id; i > ind-1; i--) {
+        removeHead(head);
     }
 
 
@@ -320,6 +316,18 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
 
     int deletedLines = 0;
 
+    list *n = malloc((sizeof(list)));
+    n->id = ind;
+    n->com = d;
+    n->fLine = fromLine;
+    n->sLine = toLine;
+    n->document = malloc((toLine-fromLine+1)*sizeof(char*));
+    for(int i = fromLine; i <= toLine; i++) {
+        if(doc[i-1] != NULL) {
+            n->document[i-fromLine] = doc[i-1];
+        }
+    }
+
     if(doc[toLine] == NULL) {
         for(int i = fromLine; i <= toLine; i++) {
 
@@ -328,7 +336,6 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
             }
             else {
                 deletedLines++;
-                //free(doc[i-1]);
                 doc[i-1] = NULL;
             }
 
@@ -337,44 +344,26 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
     else{
         for(int i = fromLine; i <= toLine; i++) {
             deletedLines++;
-            //free(doc[i-1]);
             doc[i-1] = NULL;
         }
 
         for(int i = toLine; doc[i] != NULL; i++) {
 
-            //doc[i - deletedLines] = doc[i];
-            //doc[i] = NULL;
-
             if(doc[i - deletedLines] == NULL) {
-                //doc[i - deletedLines] = malloc((strlen(doc[i])+1)*sizeof(char));
                 doc[i - deletedLines] = doc[i];
-                //strcpy(doc[i - deletedLines], doc[i]);
-                //free(doc[i]);
                 doc[i] = NULL;
             }
             else {
-                //free(doc[i - 1 - deletedLines]);
-                //doc[i - 1 - deletedLines] = malloc((strlen(doc[i - 1])+1)*sizeof(char));
                 doc[i - 1 - deletedLines] = doc[i-1];
-                //strcpy(doc[i - 1 - deletedLines], doc[i - 1]);
-                //free(doc[i - 1]);
                 doc[i - 1] = NULL;
             }
 
         }
     }
 
-    list *n = malloc((sizeof(list)));
-    n->id = ind;
-    n->com = d;
-    n->document = malloc((*s)*sizeof(char*));
-    for(int i = 0; doc[i] != NULL; i++) {
-        n->document[i] = doc[i];
-        //strcpy(n->document[i], doc[i]);
-    }
 
-    insertTail(head, h, n, ind);
+    //insertTail(head, h, n, ind);
+    insHead(head, n);
 
 }
 
@@ -404,41 +393,156 @@ void printText(int fromLine, int toLine, char **doc) {
 
 }
 
+
 void undo(int numCommands, char **doc, list **head, int ind) {
 
-    list *backToNode = findNodeById(*head, ind-numCommands);
+    list *actualNode = *head;
+
+    while((actualNode != T_NIL) && (actualNode->id != ind - numCommands)) {
+
+        if(actualNode->com == c && actualNode->document[0] == NULL) {
+            for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
+                doc[i-1] = NULL;
+            }
+        }
+        else if(actualNode->com == c && actualNode->document[0] != NULL) {
+            for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
+                if(actualNode->document[i-(actualNode->fLine)] != NULL) {
+                    doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                }
+                else {
+                    doc[i-1] = NULL;
+                }
+
+            }
+        }
+        else if(actualNode->com == d) {
+            if(actualNode->document[0] != NULL) {
+                int dLines = actualNode->sLine - actualNode->fLine + 1;
+                for(int i = actualNode->sLine; actualNode->document[i-(actualNode->sLine)] != NULL; i++) {
+                    doc[i-1+dLines] = doc[i-1];
+                    doc[i-1] = actualNode->document[i];
+                }
+            }
+        }
+
+        actualNode = actualNode->next;
+
+    }
+
+}
+
+void undoOld(int numCommands, char **doc, list **head, int ind) {
+
+    list *actualNode = findNodeById(*head, ind);
+
+    while((actualNode != T_NIL) && (actualNode->id != ind - numCommands)) {
+
+        if(actualNode->com == c) {
+            for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
+                if(actualNode->prec != T_NIL) {
+                    //int precLines = actualNode->prec->sLine - actualNode->prec->fLine + 1;
+                    if(actualNode->prec->sLine < i) {
+                        doc[i-1] = NULL;
+                    }
+                    else {
+                        doc[i-1] = actualNode->prec->document[i-(actualNode->fLine)];
+                    }
+
+                }
+                else {
+                    doc[i-1] = NULL;
+                }
+            }
+            for(int i = actualNode->sLine + 1; doc[i] != NULL; i++) {
+                doc[i] = NULL;
+            }
+        }
+        else if(actualNode->com == d) {
+            if(actualNode->document[0] != NULL) {
+                int dLines = actualNode->sLine - actualNode->fLine + 1;
+                for(int i = actualNode->sLine; actualNode->document[(actualNode->sLine)-i] != NULL; i++) {
+                    doc[i-2+dLines] = doc[i-2];
+                    doc[i-2] = actualNode->document[i];
+                }
+            }
+        }
+
+        actualNode = actualNode->prec;
+
+    }
+
+
+
+
+
+    /*list *backToNode = findNodeById(*head, ind-numCommands);
 
     for(int i = 0; doc[i] != NULL; i++) {
-        //free(doc[i]);
         doc[i] = NULL;
     }
     if(backToNode != T_NIL) {
         for(int i = 0; backToNode->document[i] != NULL; i++) {
-            //doc[i] = malloc((strlen(backToNode->document[i])+1)*sizeof(char));
             doc[i] = backToNode->document[i];
-            //strcpy(doc[i], backToNode->document[i]);
         }
-    }
+    }*/
 
 }
 
 void redo(int numCommands, char **doc, list **head, int ind) {
 
-    list *restoreToNode = findNodeById(*head, ind+numCommands);
+    list *actualNode = findNodeById(*head, ind + 1);
+
+    while((actualNode != T_NIL) && (actualNode->id != ind + numCommands)) {
+
+        if(actualNode->com == c) {
+            for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
+
+                doc[i-1] = actualNode->document[(actualNode->fLine)-i];
+
+            }
+        }
+        else if(actualNode->com == d) {
+            for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
+                doc[i-1] = NULL;
+            }
+            for(int i = actualNode->sLine; doc[i] != NULL; i++) {
+                int dLines = actualNode->sLine - actualNode->fLine + 1;
+                if(doc[i-dLines] == NULL) {
+                    doc[i-dLines] = doc[i];
+                    doc[i] = NULL;
+                }
+                else {
+                    doc[i-1-dLines] = doc[i-1];
+                    doc[i-1] = NULL;
+                }
+
+            }
+        }
+
+        actualNode = actualNode->next;
+
+    }
+
+
+    /*list *restoreToNode = findNodeById(*head, ind+numCommands);
 
     for(int i = 0; doc[i] != NULL; i++) {
-        //free(doc[i]);
         doc[i] = NULL;
     }
     for(int i = 0; restoreToNode->document[i] != NULL; i++) {
-        //doc[i] = malloc((strlen(restoreToNode->document[i])+1)*sizeof(char));
         doc[i] = restoreToNode->document[i];
-        //strcpy(doc[i], restoreToNode->document[i]);
-    }
+    }*/
 
 }
 
 
+void insHead(list **head, list *n) {
+    n->prec = T_NIL;
+    n->next = *head;
+    n->next->prec = n;
+    *head = n;
+}
 
 void insertHead(list **head, list **h, list *n, int ind) {
 
@@ -490,6 +594,7 @@ void removeHead(list **head) {
         list *old = *head;
         *head = old->next;
         old->next->prec = *head;
+        (*head)->prec = T_NIL;
         free(old);
     }
 
@@ -515,8 +620,22 @@ void removeTail(list **head) {
     }
 }*/
 
-
 list* findNodeById(list *node, int id) {
+
+    list *nodeTemp = node;
+
+    while(nodeTemp != T_NIL) {
+        if(nodeTemp->id == id) {
+            return nodeTemp;
+        }
+        else {
+            nodeTemp = nodeTemp->next;
+        }
+    }
+}
+
+
+list* findNodeByIdRic(list *node, int id) {
     if(node == T_NIL || node->id == id) {
         return node;
     }
@@ -524,8 +643,6 @@ list* findNodeById(list *node, int id) {
         return findNodeById(node->next, id);
     }
 }
-
-
 
 
 
