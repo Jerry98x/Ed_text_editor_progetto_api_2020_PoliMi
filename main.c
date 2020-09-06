@@ -25,10 +25,10 @@ list NIL;
 list* T_NIL = &NIL;
 
 
-void changeText(int fromLine, int toLine, char **doc, char *text, list **head, list **h, int ind, int *s);
-void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int ind, int *s);
-void undo(int numCommands, char **doc, list **head, int ind);
-void redo(int numCommands, char **doc, list **head, int ind);
+void changeText(int fromLine, int toLine, char **doc, char *text, list **head, int *lc, int ind, int *s);
+void deleteText(int fromLine, int toLine, char **doc, list **head, int *lc, int ind, int *s);
+void undo(int numCommands, char **doc, list **head, int ind, int *lc);
+void redo(int numCommands, char **doc, list **head, int ind, int *lc);
 void printText(int fromLine, int toLine, char **doc);
 
 
@@ -67,6 +67,8 @@ int main() {
     h = T_NIL;
 
     int index = 0;
+    int lineCounter = 0;
+    int *lc = &lineCounter;
     int possibleRedoLines = 0;
 
     char **document = malloc((*s)*sizeof(char*));
@@ -109,7 +111,7 @@ int main() {
                     strcpy(text[k], comando);
                 }*/
 
-                changeText(firstLine, secondLine, document, text, &head, &h, index, s);
+                changeText(firstLine, secondLine, document, text, &head, lc, index, s);
 
 
                 /*for(int k = 0; k < grandezza; k++) {
@@ -120,14 +122,14 @@ int main() {
             }
             else if(com == 'd') {
 
-                if(firstLine == 0 || secondLine == 0) {
+                /*if(firstLine == 0 || secondLine == 0) {
                     continue;
-                }
+                }*/
 
                 possibleRedoLines = 0;
                 index++;
 
-                deleteText(firstLine, secondLine, document, &head, &h, index, s);
+                deleteText(firstLine, secondLine, document, &head, lc, index, s);
 
             }
             else if(com == 'p') {
@@ -161,7 +163,7 @@ int main() {
                     }
                 }
 
-                undo(thisUndo, document, &head, indTemp);
+                undo(thisUndo, document, &head, indTemp, lc);
 
             }
             else if(com == 'r') {
@@ -181,7 +183,7 @@ int main() {
 
                 }
 
-                redo((redoLineTemp-possibleRedoLines), document, &head, indTemp);
+                redo((redoLineTemp-possibleRedoLines), document, &head, indTemp, lc);
 
             }
 
@@ -197,7 +199,7 @@ int main() {
 
 
 
-void changeText(int fromLine, int toLine, char **doc, char *text, list **head, list **h, int ind, int *s) {
+void changeText(int fromLine, int toLine, char **doc, char *text, list **head, int *lc, int ind, int *s) {
 
     /*list *indexNode = findNodeById(*head, ind-1);
 
@@ -236,7 +238,7 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, l
     n->com = c;
     n->fLine = fromLine;
     n->sLine = toLine;
-    n->document = malloc((toLine-fromLine+1)*sizeof(char*));
+    n->document = malloc((*lc)*sizeof(char*));
     /*for(int i = fromLine; i <= toLine; i++) {
         if(doc[i-1] != NULL) {
             n->document[i-fromLine] = doc[i-1];
@@ -268,6 +270,11 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, l
         return;
     }
 
+    if(toLine > *lc) {
+        *lc = toLine;
+    }
+
+
 
     /*list *n = malloc((sizeof(list)));
     n->id = ind;
@@ -286,7 +293,7 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, l
 }
 
 
-void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int ind, int *s) {
+void deleteText(int fromLine, int toLine, char **doc, list **head, int *lc, int ind, int *s) {
 
     /*list *indexNode = findNodeById(*h, ind);
 
@@ -307,11 +314,33 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
 
     if(fromLine == 0) {
         if(toLine == 0) {
+            list *n = malloc((sizeof(list)));
+            n->id = ind;
+            n->com = d;
+            n->fLine = -1;
+            n->sLine = -1;
+            n->document = NULL;
             return;
         }
         else {
             fromLine++;
         }
+    }
+    if(toLine > *lc) {
+        toLine = *lc;
+    }
+    if(doc[fromLine-1] == NULL) {
+        list *n = malloc((sizeof(list)));
+        n->id = ind;
+        n->com = d;
+        n->fLine = -1;
+        n->sLine = -1;
+        n->document = NULL;
+        //TODO: ho messo doc[fromLine-1] al posto di doc[fromLine] in questo if
+        //TODO: aggiungere questo nodo (e quello sopra nel controllo sugli zeri)
+        //n->document = malloc((*lc)*sizeof(char*));
+        insHead(head, n);
+        return;
     }
 
 
@@ -322,12 +351,13 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
     n->com = d;
     n->fLine = fromLine;
     n->sLine = toLine;
-    n->document = malloc((toLine-fromLine+1)*sizeof(char*));
+    n->document = malloc((*lc)*sizeof(char*));
     for(int i = fromLine; i <= toLine; i++) {
         if(doc[i-1] != NULL) {
             n->document[i-fromLine] = doc[i-1];
         }
     }
+    //TODO: mergiare i cicli
 
     if(doc[toLine] == NULL) {
         for(int i = fromLine; i <= toLine; i++) {
@@ -362,6 +392,8 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, list **h, int
         }
     }
 
+    *lc = *lc - deletedLines;
+
 
     //insertTail(head, h, n, ind);
     insHead(head, n);
@@ -395,43 +427,65 @@ void printText(int fromLine, int toLine, char **doc) {
 }
 
 
-void undo(int numCommands, char **doc, list **head, int ind) {
+void undo(int numCommands, char **doc, list **head, int ind, int *lc) {
 
     list *actualNode = findNodeById(*head, ind);
+    //TODO: indirizzo maggiore di 1 del massimo ind della testa
     //list *actualNode = *head;
 
     while((actualNode != T_NIL) && (actualNode->id != ind - numCommands)) {
 
         if(actualNode->com == c && actualNode->document[0] == NULL) {
             for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
+                actualNode->document[i-(actualNode->fLine)] = doc[i-1];
                 doc[i-1] = NULL;
             }
+            *lc = *lc - (actualNode->sLine - actualNode->fLine + 1);
         }
         else if(actualNode->com == c && actualNode->document[0] != NULL) {
+            int overwrittenLines = 0;
             for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
+
                 if(actualNode->document[i-(actualNode->fLine)] != NULL) {
+                    char *buffer;
+                    buffer = doc[i-1];
                     doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                    actualNode->document[i-(actualNode->fLine)] = buffer;
+                    overwrittenLines++;
                 }
                 else {
+                    actualNode->document[i-(actualNode->fLine)] = doc[i-1];
                     doc[i-1] = NULL;
                 }
 
             }
+            *lc = *lc - ((actualNode->sLine - actualNode->fLine + 1) - overwrittenLines);
         }
         else if(actualNode->com == d) {
             //if(actualNode->document[0] != NULL) {
-            int dLines = actualNode->sLine - actualNode->fLine + 1;
-            if(doc[(actualNode->fLine)-1] == NULL) {
-                for(int i = actualNode->fLine; actualNode->document[i-(actualNode->fLine)] != NULL; i++) {
-                    doc[i-1] = actualNode->document[i-(actualNode->fLine)];
-                }
+            if(actualNode->fLine == -1) {
+                actualNode = actualNode->next;
+                continue;
             }
             else {
-                for(int i = actualNode->fLine; actualNode->document[i-(actualNode->fLine)] != NULL; i++) {
-                    doc[i-1+dLines] = doc[i-1];
-                    doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                int dLines = actualNode->sLine - actualNode->fLine + 1;
+                if(doc[(actualNode->fLine)-1] == NULL) { //cancella dal fondo, non serve shiftare
+                    for(int i = actualNode->fLine; actualNode->document[i-(actualNode->fLine)] != NULL; i++) {
+                        doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                    }
                 }
+                else {
+                    for(int i = *lc - 1; i >= actualNode->sLine; i--) {
+                        doc[i+dLines] = doc[i];
+                    }
+                    for(int i = actualNode->fLine; actualNode->document[i-(actualNode->fLine)] != NULL; i++) {
+                        doc[i-1+dLines] = doc[i-1];
+                        doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                    }
+                }
+                *lc = *lc + dLines;
             }
+
 
             //}
         }
@@ -499,38 +553,66 @@ void undoOld(int numCommands, char **doc, list **head, int ind) {
 
 }
 
-void redo(int numCommands, char **doc, list **head, int ind) {
+void redo(int numCommands, char **doc, list **head, int ind, int *lc) {
 
     list *actualNode = findNodeById(*head, ind + 1);
 
-    while((actualNode != T_NIL) && (actualNode->id != ind + numCommands)) {
+    while((actualNode != T_NIL) && ((actualNode->id) - 1 != ind + numCommands)) {
 
         if(actualNode->com == c) {
             for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
 
-                doc[i-1] = actualNode->document[(actualNode->fLine)-i];
+                if(doc[i-1] == NULL) {
+                    doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                    actualNode->document[i-(actualNode->fLine)] = NULL;
+                }
+                else {
+                    char *buffer;
+                    buffer = doc[i-1];
+                    doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                    actualNode->document[i-(actualNode->fLine)] = buffer;
 
+                }
+
+            }
+
+            if(actualNode->sLine > *lc) {
+                *lc = actualNode->sLine;
             }
         }
         else if(actualNode->com == d) {
-            for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
-                doc[i-1] = NULL;
+
+            if(actualNode->fLine == -1) {
+                actualNode = actualNode->prec;
+                continue;
             }
-            for(int i = actualNode->sLine; doc[i] != NULL; i++) {
-                int dLines = actualNode->sLine - actualNode->fLine + 1;
-                if(doc[i-dLines] == NULL) {
-                    doc[i-dLines] = doc[i];
-                    doc[i] = NULL;
-                }
-                else {
-                    doc[i-1-dLines] = doc[i-1];
+            else {
+                for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
+                    actualNode->document[i-(actualNode->fLine)] = doc[i-1];
                     doc[i-1] = NULL;
+                    //TODO: nel caso sistemare la roba copiata in più
+                }
+                for(int i = actualNode->sLine; doc[i] != NULL; i++) {
+                    int dLines = actualNode->sLine - actualNode->fLine + 1;
+                    if(doc[i-dLines] == NULL) {
+                        doc[i-dLines] = doc[i];
+                        //doc[i-dLines] = actualNode->document[i-(actualNode->sLine)];
+                        doc[i] = NULL;
+                        //TODO: nel caso mergiare con for precedente
+                    }
+                    else {
+                        doc[i-1-dLines] = doc[i-1];
+                        doc[i-1] = NULL;
+                    }
+
+                    *lc = *lc - dLines;
                 }
 
             }
+
         }
 
-        actualNode = actualNode->next;
+        actualNode = actualNode->prec;
 
     }
 
