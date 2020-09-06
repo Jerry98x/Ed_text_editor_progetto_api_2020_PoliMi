@@ -421,10 +421,18 @@ void undo(int numCommands, char **doc, list **head, int ind) {
         else if(actualNode->com == d) {
             //if(actualNode->document[0] != NULL) {
             int dLines = actualNode->sLine - actualNode->fLine + 1;
-            for(int i = actualNode->sLine; actualNode->document[i-(actualNode->sLine)] != NULL; i++) {
-                doc[i-1+dLines] = doc[i-1];
-                doc[i-1] = actualNode->document[i];
+            if(doc[(actualNode->fLine)-1] == NULL) {
+                for(int i = actualNode->fLine; actualNode->document[i-(actualNode->fLine)] != NULL; i++) {
+                    doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                }
             }
+            else {
+                for(int i = actualNode->fLine; actualNode->document[i-(actualNode->fLine)] != NULL; i++) {
+                    doc[i-1+dLines] = doc[i-1];
+                    doc[i-1] = actualNode->document[i-(actualNode->fLine)];
+                }
+            }
+
             //}
         }
 
