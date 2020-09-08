@@ -7,7 +7,7 @@
 #define N 1000
 
 
-typedef enum{c, d}COMMAND;
+typedef enum{c, d, pr, u, r}COMMAND;
 
 struct commandsList {
     int id;
@@ -70,8 +70,13 @@ int main() {
     int lineCounter = 0;
     int *lc = &lineCounter;
     int possibleRedoLines = 0;
+    int indexFlag = 0;
+    int undoPerformed = 0;
 
-    char **document = malloc((*s)*sizeof(char*));
+
+    //int numberOfUndoOrRedo = 0;
+
+    char **document = calloc((*s), sizeof(char*));
 
 
     do {
@@ -89,7 +94,29 @@ int main() {
                     continue;
                 }
 
+
+                if(possibleRedoLines != undoPerformed) {
+
+
+                    if(possibleRedoLines > undoPerformed) {
+                        undo(possibleRedoLines - undoPerformed, document, &head, index - undoPerformed, lc);
+                    }
+                    else if(possibleRedoLines < undoPerformed){
+                        redo(undoPerformed - possibleRedoLines, document, &head, index - undoPerformed, lc);
+                    }
+
+                    index = index - possibleRedoLines;
+                    indexFlag = 0;
+                }
+
+                if(indexFlag == 1) {
+                    index = index - possibleRedoLines;
+                    indexFlag = 0;
+                }
+
+
                 possibleRedoLines = 0;
+                undoPerformed = 0;
                 index++;
 
                 while(secondLine > *s) {
@@ -97,42 +124,58 @@ int main() {
                     *s = (*s)*2;
                 }
 
-                int grandezza = (secondLine - firstLine) + 2;
-                //char *text[grandezza];
-
                 char text[M];
 
-
-                /*for(int k = 0; k < grandezza; k++) {
-
-                    strcpy(comando, "");
-                    text[k] = malloc(M*sizeof(char));
-                    p = fgets(comando, M, stdin);
-                    strcpy(text[k], comando);
-                }*/
-
                 changeText(firstLine, secondLine, document, text, &head, lc, index, s);
-
-
-                /*for(int k = 0; k < grandezza; k++) {
-                    free(text[k]);
-                    //text[k] = NULL;
-                }*/
 
             }
             else if(com == 'd') {
 
-                /*if(firstLine == 0 || secondLine == 0) {
-                    continue;
-                }*/
+                if(possibleRedoLines != undoPerformed) {
+
+
+                    if(possibleRedoLines > undoPerformed) {
+                        undo(possibleRedoLines - undoPerformed, document, &head, index - undoPerformed, lc);
+                    }
+                    else if(possibleRedoLines < undoPerformed){
+                        redo(undoPerformed - possibleRedoLines, document, &head, index - undoPerformed, lc);
+                    }
+
+                    index = index - possibleRedoLines;
+                    indexFlag = 0;
+                }
+
+                if(indexFlag == 1) {
+                    index = index - possibleRedoLines;
+                    indexFlag = 0;
+                }
+
 
                 possibleRedoLines = 0;
+                undoPerformed = 0;
                 index++;
 
                 deleteText(firstLine, secondLine, document, &head, lc, index, s);
 
             }
             else if(com == 'p') {
+
+                if(secondLine < firstLine) {
+                    continue;
+                }
+
+                if(possibleRedoLines != undoPerformed) {
+
+                    if(possibleRedoLines > undoPerformed) {
+                        undo(possibleRedoLines - undoPerformed, document, &head, index - undoPerformed, lc);
+                    }
+                    else if(possibleRedoLines < undoPerformed){
+                        redo(undoPerformed - possibleRedoLines, document, &head, index - undoPerformed, lc);
+                    }
+
+                    undoPerformed = possibleRedoLines;
+                    indexFlag = 1;
+                }
 
                 printText(firstLine, secondLine, document);
 
@@ -147,23 +190,12 @@ int main() {
                     continue;
                 }
 
-                int indTemp = index;
-                int thisUndo = 0;
-
-                for(int i = 0; i < line; i++) {
-                    if(i < indTemp) {
-                        if(index >= 0) {
-                            index--;
-                            possibleRedoLines++;
-                            thisUndo++;
-                        }
-                        else {
-                            continue;
-                        }
-                    }
+                if(possibleRedoLines + line <= index) {
+                    possibleRedoLines = possibleRedoLines + line;
                 }
-
-                undo(thisUndo, document, &head, indTemp, lc);
+                else {
+                    possibleRedoLines = index;
+                }
 
             }
             else if(com == 'r') {
@@ -171,19 +203,12 @@ int main() {
                 if(line == 0) {
                     continue;
                 }
-
-                int indTemp = index;
-                int redoLineTemp = possibleRedoLines;
-
-                for(int i = 0; i < line; i++) {
-                    if(possibleRedoLines > 0) {
-                        index++;
-                        possibleRedoLines--;
-                    }
-
+                if(possibleRedoLines - line >= 0) {
+                    possibleRedoLines = possibleRedoLines - line;
                 }
-
-                redo((redoLineTemp-possibleRedoLines), document, &head, indTemp, lc);
+                else {
+                    possibleRedoLines = 0;
+                }
 
             }
 
@@ -191,6 +216,7 @@ int main() {
 
 
     } while(strncmp(comando, "q", 1) != 0);
+
 
 
     return 0;
@@ -238,7 +264,7 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, i
     n->com = c;
     n->fLine = fromLine;
     n->sLine = toLine;
-    n->document = malloc((*lc)*sizeof(char*));
+    n->document = calloc(((toLine-fromLine+1)), sizeof(char*));
     /*for(int i = fromLine; i <= toLine; i++) {
         if(doc[i-1] != NULL) {
             n->document[i-fromLine] = doc[i-1];
@@ -274,19 +300,6 @@ void changeText(int fromLine, int toLine, char **doc, char *text, list **head, i
         *lc = toLine;
     }
 
-
-
-    /*list *n = malloc((sizeof(list)));
-    n->id = ind;
-    n->com = c;
-    n->fLine = fromLine;
-    n->sLine = toLine;
-    n->document = malloc((toLine-fromLine+1)*sizeof(char*));
-    for(int i = fromLine; i <= toLine; i++) {
-        n->document[i-fromLine] = doc[i-1];
-    }*/
-
-    //insertTail(head, h, n, ind);
     insHead(head,n);
 
 
@@ -320,6 +333,7 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, int *lc, int 
             n->fLine = -1;
             n->sLine = -1;
             n->document = NULL;
+            insHead(head, n);
             return;
         }
         else {
@@ -336,9 +350,6 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, int *lc, int 
         n->fLine = -1;
         n->sLine = -1;
         n->document = NULL;
-        //TODO: ho messo doc[fromLine-1] al posto di doc[fromLine] in questo if
-        //TODO: aggiungere questo nodo (e quello sopra nel controllo sugli zeri)
-        //n->document = malloc((*lc)*sizeof(char*));
         insHead(head, n);
         return;
     }
@@ -351,7 +362,7 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, int *lc, int 
     n->com = d;
     n->fLine = fromLine;
     n->sLine = toLine;
-    n->document = malloc((*lc)*sizeof(char*));
+    n->document = calloc(((toLine-fromLine+2)), sizeof(char*));
     for(int i = fromLine; i <= toLine; i++) {
         if(doc[i-1] != NULL) {
             n->document[i-fromLine] = doc[i-1];
@@ -359,7 +370,7 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, int *lc, int 
     }
     //TODO: mergiare i cicli
 
-    if(doc[toLine] == NULL) {
+    if(doc[toLine] == NULL) { //non shifta
         for(int i = fromLine; i <= toLine; i++) {
 
             if(doc[i-1] == NULL) {
@@ -372,7 +383,7 @@ void deleteText(int fromLine, int toLine, char **doc, list **head, int *lc, int 
 
         }
     }
-    else{
+    else{ //shifta
         for(int i = fromLine; i <= toLine; i++) {
             deletedLines++;
             doc[i-1] = NULL;
@@ -446,7 +457,7 @@ void undo(int numCommands, char **doc, list **head, int ind, int *lc) {
             int overwrittenLines = 0;
             for(int i = actualNode->fLine; i <= actualNode->sLine; i++) {
 
-                if(actualNode->document[i-(actualNode->fLine)] != NULL) {
+                if(actualNode->document[i-(actualNode->fLine)] != NULL) { //sovr.
                     char *buffer;
                     buffer = doc[i-1];
                     doc[i-1] = actualNode->document[i-(actualNode->fLine)];
@@ -475,11 +486,12 @@ void undo(int numCommands, char **doc, list **head, int ind, int *lc) {
                     }
                 }
                 else {
-                    for(int i = *lc - 1; i >= actualNode->sLine; i--) {
+                    for(int i = *lc - 1; i >= actualNode->fLine - 1; i--) {
                         doc[i+dLines] = doc[i];
                     }
                     for(int i = actualNode->fLine; actualNode->document[i-(actualNode->fLine)] != NULL; i++) {
-                        doc[i-1+dLines] = doc[i-1];
+                        //if(i-1+dLines <= *lc -1) ------> riga 494
+                        //doc[i-1+dLines] = doc[i-1];
                         doc[i-1] = actualNode->document[i-(actualNode->fLine)];
                     }
                 }
@@ -615,16 +627,6 @@ void redo(int numCommands, char **doc, list **head, int ind, int *lc) {
         actualNode = actualNode->prec;
 
     }
-
-
-    /*list *restoreToNode = findNodeById(*head, ind+numCommands);
-
-    for(int i = 0; doc[i] != NULL; i++) {
-        doc[i] = NULL;
-    }
-    for(int i = 0; restoreToNode->document[i] != NULL; i++) {
-        doc[i] = restoreToNode->document[i];
-    }*/
 
 }
 
